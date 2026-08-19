@@ -29,7 +29,7 @@ $router = new Router();
 $module = ( ( $_GET["uri"] == "") || str_starts_with($_GET["uri"] ,"index.php" ) || ! isset($_GET["uri"]) ? "home" : $_GET["uri"] );
 
 $router->dispatch( $module );
-
+//teste git
 /**
 * Este é o script principal de inicialização para a aplicação.
  * Ele define algumas variáveis úteis, lida com a configuração,
