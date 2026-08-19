@@ -1,0 +1,1 @@
+[23-Nov-2023 19:42:32 UTC] PHP Fatal error:  Allowed memory size of 33554432 bytes exhausted (tried to allocate 37351712 bytes) in /home2/hostdeprojetos/public_html/amandaimoveis/app/core/utils/Router.php on line 39
