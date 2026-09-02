@@ -1,0 +1,26 @@
+:root {
+    color-scheme: light;
+}
+
+html,
+body {
+    min-height: 100%;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f8f9fa;
+}
+
+main {
+    flex: 1;
+}
+
+.card {
+    border: 0;
+    box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 8%);
+}
+

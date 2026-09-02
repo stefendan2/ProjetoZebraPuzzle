@@ -1,0 +1,12 @@
+/.env
+/vendor/
+/config/database.local.php
+/storage/logs/*.log
+/.idea/
+/.vscode/
+/.settings/
+/.project
+/.buildpath
+Thumbs.db
+.DS_Store
+

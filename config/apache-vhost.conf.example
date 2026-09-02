@@ -1,0 +1,14 @@
+<VirtualHost *:80>
+    ServerName zebrapuzzle.local
+    DocumentRoot "/caminho/absoluto/ProjetoZebraPuzzle/public"
+
+    <Directory "/caminho/absoluto/ProjetoZebraPuzzle/public">
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog "logs/zebrapuzzle-error.log"
+    CustomLog "logs/zebrapuzzle-access.log" combined
+</VirtualHost>
+
