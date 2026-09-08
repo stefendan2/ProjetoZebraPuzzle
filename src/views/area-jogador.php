@@ -19,6 +19,28 @@
     </div>
 </div>
 
+<div class="card mb-4">
+    <div class="card-body">
+        <h2 class="h5">Tema do teste</h2>
+        <?php if (is_array($temaEfetivo ?? null)): ?>
+            <p class="mb-1">
+                <strong><?= e($temaEfetivo['nome']) ?></strong>
+                <span class="badge text-bg-secondary">
+                    <?= ($temaEfetivo['origem'] ?? '') === 'preferencia' ? 'preferência salva' : 'tema padrão' ?>
+                </span>
+            </p>
+            <?php if (is_string($temaEfetivo['descricao'] ?? null) && $temaEfetivo['descricao'] !== ''): ?>
+                <p class="text-secondary mb-3"><?= e($temaEfetivo['descricao']) ?></p>
+            <?php endif; ?>
+            <a class="btn btn-sm btn-outline-primary" href="<?= e(url('/minha-conta')) ?>">Ver ou trocar tema</a>
+        <?php else: ?>
+            <div class="alert alert-warning mb-0" role="alert">
+                Nenhum tema válido está disponível. As telas dependentes de tema permanecerão indisponíveis até a correção do catálogo.
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
+
 <form method="post" action="<?= e(url('/area-jogador/flash')) ?>" class="card card-body">
     <?= csrf_campo() ?>
     <p>Este POST comprova a proteção CSRF e o padrão POST → Redirect → GET.</p>

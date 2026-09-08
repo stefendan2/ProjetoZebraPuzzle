@@ -23,10 +23,11 @@ require dirname(__DIR__) . '/src/flash.php';
 require dirname(__DIR__) . '/src/layout.php';
 require dirname(__DIR__) . '/src/csrf.php';
 require dirname(__DIR__) . '/src/sessao.php';
+require dirname(__DIR__) . '/src/temas.php';
 require dirname(__DIR__) . '/src/contas.php';
 require dirname(__DIR__) . '/src/captcha.php';
 
-session_id('fase4-' . bin2hex(random_bytes(8)));
+session_id('fase5-' . bin2hex(random_bytes(8)));
 session_start();
 $_SESSION = [];
 $falhas = [];
@@ -129,10 +130,72 @@ $hash = password_hash('SenhaSegura123', PASSWORD_DEFAULT);
 $verificar($hash !== 'SenhaSegura123', 'A senha armazenada deve ser um hash.');
 $verificar(password_verify('SenhaSegura123', $hash), 'O hash deve validar a senha original.');
 
+$temaCompleto = [
+    'nome' => 'Tema de teste',
+    'descricao' => 'Estrutura usada apenas pelos testes automatizados.',
+    'categorias' => [],
+];
+for ($categoria = 1; $categoria <= 5; $categoria++) {
+    $valores = [];
+    for ($valor = 1; $valor <= 5; $valor++) {
+        $valores[] = ['nome' => "Valor {$categoria}.{$valor}", 'posicao' => $valor];
+    }
+    $temaCompleto['categorias'][] = [
+        'nome' => 'Categoria ' . $categoria,
+        'posicao' => $categoria,
+        'valores' => $valores,
+    ];
+}
+
+$verificar(validar_estrutura_tema($temaCompleto) === [], 'Um tema exatamente 5 x 5 deve ser aceito.');
+
+$temaQuatroCategorias = $temaCompleto;
+array_pop($temaQuatroCategorias['categorias']);
+$verificar(validar_estrutura_tema($temaQuatroCategorias) !== [], 'Um tema com 4 categorias deve ser rejeitado.');
+
+$temaSeisCategorias = $temaCompleto;
+$temaSeisCategorias['categorias'][] = [
+    'nome' => 'Categoria 6',
+    'posicao' => 6,
+    'valores' => $temaCompleto['categorias'][0]['valores'],
+];
+$verificar(validar_estrutura_tema($temaSeisCategorias) !== [], 'Um tema com 6 categorias deve ser rejeitado.');
+
+$categoriaQuatroValores = $temaCompleto;
+array_pop($categoriaQuatroValores['categorias'][0]['valores']);
+$verificar(validar_estrutura_tema($categoriaQuatroValores) !== [], 'Uma categoria com 4 valores deve ser rejeitada.');
+
+$categoriaSeisValores = $temaCompleto;
+$categoriaSeisValores['categorias'][0]['valores'][] = ['nome' => 'Sexto valor', 'posicao' => 6];
+$verificar(validar_estrutura_tema($categoriaSeisValores) !== [], 'Uma categoria com 6 valores deve ser rejeitada.');
+
+$posicaoAusente = $temaCompleto;
+$posicaoAusente['categorias'][4]['posicao'] = 6;
+$verificar(validar_estrutura_tema($posicaoAusente) !== [], 'Uma posição ausente deve ser rejeitada.');
+
+$posicaoRepetida = $temaCompleto;
+$posicaoRepetida['categorias'][1]['posicao'] = 1;
+$verificar(validar_estrutura_tema($posicaoRepetida) !== [], 'Uma posição repetida deve ser rejeitada.');
+
+$nomeVazio = $temaCompleto;
+$nomeVazio['categorias'][0]['valores'][0]['nome'] = '   ';
+$verificar(validar_estrutura_tema($nomeVazio) !== [], 'Um nome vazio deve ser rejeitado.');
+
+$tipoInesperado = $temaCompleto;
+$tipoInesperado['categorias'][0]['valores'] = 'não é uma lista';
+$verificar(validar_estrutura_tema($tipoInesperado) !== [], 'Um tipo inesperado deve ser rejeitado sem erro fatal.');
+
+$verificar(normalizar_id_tema('2') === 2, 'Um ID inteiro positivo deve ser aceito.');
+$verificar(normalizar_id_tema('1 OR 1=1') === null, 'Uma tentativa de injeção no ID deve ser rejeitada.');
+$verificar(normalizar_id_tema('') === null, 'Um ID vazio deve ser rejeitado.');
+$verificar(normalizar_id_tema('1.5') === null, 'Um ID decimal deve ser rejeitado.');
+
 $schema = file_get_contents(dirname(__DIR__) . '/sql/schema.sql');
 $rotas = file_get_contents(dirname(__DIR__) . '/config/routes.php');
+$seedTemas = file_get_contents(dirname(__DIR__) . '/sql/seed_temas.sql');
 $verificar(is_string($schema), 'O schema.sql deve estar legível.');
 $verificar(is_string($rotas), 'O arquivo de rotas deve estar legível.');
+$verificar(is_string($seedTemas), 'O seed de temas deve estar legível.');
 
 foreach ([
     'jogador',
@@ -157,6 +220,19 @@ $verificar(is_string($schema) && !str_contains($schema, 'IDENTIFIED BY'), 'O sch
 $verificar(is_string($rotas) && str_contains($rotas, "post('/logout'"), 'O logout deve aceitar POST.');
 $verificar(is_string($rotas) && !str_contains($rotas, "get('/logout'"), 'O logout não deve aceitar GET.');
 $verificar(is_string($rotas) && str_contains($rotas, 'csrf_exigir_valido()'), 'Formulários mutáveis devem exigir CSRF.');
+$verificar(is_string($rotas) && str_contains($rotas, "post('/minha-conta/tema'"), 'A troca de tema deve aceitar POST.');
+$verificar(is_string($rotas) && !str_contains($rotas, "get('/minha-conta/tema'"), 'A troca de tema não deve aceitar GET.');
+$verificar(
+    is_string($seedTemas)
+    && str_contains($seedTemas, "'Clássico'")
+    && str_contains($seedTemas, "'Campus'")
+    && str_contains($seedTemas, "'Exploração espacial'"),
+    'O seed deve conter os três temas aprovados.'
+);
+$verificar(is_string($seedTemas) && str_contains($seedTemas, 'START TRANSACTION'), 'O seed deve usar transação.');
+$verificar(is_string($seedTemas) && str_contains($seedTemas, 'SIGNAL SQLSTATE'), 'O seed deve rejeitar catálogo incompleto.');
+$verificar(is_string($seedTemas) && !str_contains($seedTemas, 'IDENTIFIED BY'), 'O seed não deve conter credenciais.');
+$verificar(is_string($seedTemas) && !str_contains($seedTemas, 'TRUNCATE'), 'O seed não deve truncar dados existentes.');
 
 if ($falhas !== []) {
     session_destroy();

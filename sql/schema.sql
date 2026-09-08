@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS tema_categoria (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- A faixa e a unicidade limitam as posições a 1..5. A Fase 5 deverá
--- validar em transação que cada tema termine com exatamente 5 categorias.
+-- A faixa e a unicidade limitam as posições a 1..5. A validação da Fase 5
+-- assegura em transação que cada tema termine com exatamente 5 categorias.
 
 CREATE TABLE IF NOT EXISTS tema_valor (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -46,8 +46,8 @@ CREATE TABLE IF NOT EXISTS tema_valor (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- A Fase 5 deverá validar em transação que cada categoria termine com
--- exatamente 5 valores; o CHECK isolado não consegue contar outras linhas.
+-- A validação da Fase 5 assegura em transação que cada categoria termine
+-- com exatamente 5 valores; o CHECK isolado não conta outras linhas.
 
 CREATE TABLE IF NOT EXISTS jogador (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -153,11 +153,11 @@ CREATE TABLE IF NOT EXISTS acesso_diario (
 CREATE TABLE IF NOT EXISTS verificacao_email (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     jogador_id BIGINT UNSIGNED NOT NULL,
+    email_pendente VARCHAR(254) NULL,
     token_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
     expira_em DATETIME NOT NULL,
     utilizado_em DATETIME NULL,
     criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    email_pendente VARCHAR(254) NULL,
     CONSTRAINT uq_verificacao_email_token UNIQUE (token_hash),
     CONSTRAINT fk_verificacao_email_jogador
         FOREIGN KEY (jogador_id) REFERENCES jogador (id)

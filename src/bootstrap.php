@@ -32,6 +32,7 @@ require_once __DIR__ . '/validacao.php';
 require_once __DIR__ . '/layout.php';
 require_once __DIR__ . '/csrf.php';
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/temas.php';
 require_once __DIR__ . '/contas.php';
 require_once __DIR__ . '/captcha.php';
 require_once __DIR__ . '/autenticacao.php';

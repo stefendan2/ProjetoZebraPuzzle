@@ -64,7 +64,8 @@ function token_verificacao_desenvolvimento_consumir(): ?string
 function buscar_jogador_por_email(PDO $pdo, string $email): ?array
 {
     $statement = $pdo->prepare(
-        'SELECT id, cpf, nome_usuario, email, senha_hash, email_verificado, ativo
+        'SELECT id, cpf, nome_usuario, email, senha_hash, email_verificado,
+                tema_preferido_id, ativo
          FROM jogador WHERE email = :email LIMIT 1'
     );
     $statement->execute(['email' => normalizar_email($email)]);
@@ -77,7 +78,8 @@ function buscar_jogador_por_email(PDO $pdo, string $email): ?array
 function buscar_jogador_por_id(PDO $pdo, int $id): ?array
 {
     $statement = $pdo->prepare(
-        'SELECT id, cpf, nome_usuario, email, senha_hash, email_verificado, ativo
+        'SELECT id, cpf, nome_usuario, email, senha_hash, email_verificado,
+                tema_preferido_id, ativo
          FROM jogador WHERE id = :id LIMIT 1'
     );
     $statement->execute(['id' => $id]);
@@ -193,15 +195,17 @@ function criar_jogador_pendente(PDO $pdo, array $dados): array
 
     try {
         $pdo->beginTransaction();
+        $temaPadrao = buscar_tema_padrao($pdo);
         $inserir = $pdo->prepare(
-            'INSERT INTO jogador (cpf, nome_usuario, email, senha_hash)
-             VALUES (:cpf, :nome_usuario, :email, :senha_hash)'
+            'INSERT INTO jogador (cpf, nome_usuario, email, senha_hash, tema_preferido_id)
+             VALUES (:cpf, :nome_usuario, :email, :senha_hash, :tema_preferido_id)'
         );
         $inserir->execute([
             'cpf' => $cpf,
             'nome_usuario' => $nome,
             'email' => $email,
             'senha_hash' => password_hash($senha, PASSWORD_DEFAULT),
+            'tema_preferido_id' => $temaPadrao['id'] ?? null,
         ]);
 
         $token = emitir_token_verificacao($pdo, (int) $pdo->lastInsertId());

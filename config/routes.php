@@ -219,7 +219,8 @@ return static function (Router $router): void {
 
     $router->get('/minha-conta', static function (): void {
         exigir_login_jogador();
-        $jogador = buscar_jogador_por_id(db(), (int) usuario_id());
+        $pdo = db();
+        $jogador = buscar_jogador_por_id($pdo, (int) usuario_id());
         if ($jogador === null) {
             throw new RuntimeException('Conta autenticada não encontrada.');
         }
@@ -236,8 +237,11 @@ return static function (Router $router): void {
             'dados' => $dados,
             'erros' => $formulario['erros'],
             'emailAtual' => (string) $jogador['email'],
-            'emailPendente' => buscar_email_pendente(db(), (int) $jogador['id']),
+            'emailPendente' => buscar_email_pendente($pdo, (int) $jogador['id']),
             'linkVerificacao' => link_verificacao_desenvolvimento_consumir(),
+            'temas' => listar_temas_elegiveis($pdo),
+            'temaEfetivo' => carregar_tema_efetivo($pdo, (int) $jogador['id']),
+            'temaPreferidoId' => $jogador['tema_preferido_id'],
         ]);
     });
 
@@ -266,18 +270,38 @@ return static function (Router $router): void {
         redirecionar('/minha-conta');
     });
 
+    $router->post('/minha-conta/tema', static function (): void {
+        exigir_login_jogador();
+        csrf_exigir_valido();
+
+        $resultado = alterar_tema_jogador(
+            db(),
+            (int) usuario_id(),
+            $_POST['tema_id'] ?? null
+        );
+        if (!$resultado['ok']) {
+            flash_adicionar('erro', (string) ($resultado['erro'] ?? 'Não foi possível alterar o tema.'));
+            redirecionar('/minha-conta');
+        }
+
+        flash_adicionar('sucesso', 'Tema alterado para ' . (string) $resultado['tema']['nome'] . '.');
+        redirecionar('/minha-conta');
+    });
+
     $router->get('/area-jogador', static function (): void {
         exigir_login_jogador();
-        $statement = db()->query(
+        $pdo = db();
+        $statement = $pdo->query(
             'SELECT DATABASE() AS banco, CURRENT_DATE() AS data_atual, @@session.time_zone AS fuso'
         );
         $dadosBanco = $statement->fetch();
-        $jogador = buscar_jogador_por_id(db(), (int) usuario_id());
+        $jogador = buscar_jogador_por_id($pdo, (int) usuario_id());
 
         renderizar('area-jogador', [
             'titulo' => 'Área do jogador',
             'dadosBanco' => is_array($dadosBanco) ? $dadosBanco : [],
             'jogador' => $jogador ?? [],
+            'temaEfetivo' => carregar_tema_efetivo($pdo, (int) usuario_id()),
         ]);
     });
 
