@@ -9,15 +9,25 @@
 </head>
 <body>
 <nav class="navbar navbar-expand-lg bg-dark navbar-dark">
-    <div class="container">
+    <div class="container gap-3">
         <a class="navbar-brand" href="<?= e(url('/')) ?>">Zebra Puzzle</a>
-        <div class="d-flex align-items-center gap-3 text-light">
-            <?php if (usuario_logado()): ?>
-                <span>Conta ativa</span>
+        <div class="d-flex flex-wrap align-items-center justify-content-end gap-2 ms-auto">
+            <?php if (usuario_logado('jogador')): ?>
+                <a class="btn btn-sm btn-outline-light" href="<?= e(url('/area-jogador')) ?>">Área do jogador</a>
+                <a class="btn btn-sm btn-outline-light" href="<?= e(url('/minha-conta')) ?>">Minha conta</a>
+            <?php elseif (usuario_logado('administrador')): ?>
+                <a class="btn btn-sm btn-outline-light" href="<?= e(url('/area-admin')) ?>">Área administrativa</a>
+            <?php else: ?>
+                <a class="btn btn-sm btn-outline-light" href="<?= e(url('/cadastro')) ?>">Criar conta</a>
+                <a class="btn btn-sm btn-primary" href="<?= e(url('/login')) ?>">Entrar</a>
             <?php endif; ?>
-            <span class="badge text-bg-secondary" aria-label="Indicador de ofensiva ainda indisponível">
-                Ofensiva: disponível na Fase 8
-            </span>
+
+            <?php if (usuario_logado()): ?>
+                <form method="post" action="<?= e(url('/logout')) ?>" class="d-inline">
+                    <?= csrf_campo() ?>
+                    <button type="submit" class="btn btn-sm btn-outline-warning">Sair</button>
+                </form>
+            <?php endif; ?>
         </div>
     </div>
 </nav>

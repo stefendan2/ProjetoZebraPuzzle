@@ -2,7 +2,7 @@
 
 <footer class="border-top py-3 mt-auto">
     <div class="container text-secondary small">
-        Zebra Puzzle — estrutura inicial das fases 0 a 3.
+        Zebra Puzzle — Fase 4: conta e acesso.
     </div>
 </footer>
 </body>

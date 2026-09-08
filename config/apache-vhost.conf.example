@@ -1,14 +1,24 @@
 <VirtualHost *:80>
     ServerName zebrapuzzle.local
-    DocumentRoot "/caminho/absoluto/ProjetoZebraPuzzle/public"
+    DocumentRoot "C:/xampp/htdocs/ZebraPuzzle/public"
 
-    <Directory "/caminho/absoluto/ProjetoZebraPuzzle/public">
+    <Directory "C:/xampp/htdocs/ZebraPuzzle/public">
         Options -Indexes +FollowSymLinks
         AllowOverride All
         Require all granted
     </Directory>
 
+    SetEnv APP_ENV development
+    SetEnv APP_DEBUG true
+    SetEnv APP_BASE_PATH ""
+
+    SetEnv DB_HOST 127.0.0.1
+    SetEnv DB_PORT 3306
+    SetEnv DB_DATABASE zebraPuzzle
+    SetEnv DB_USERNAME zebrapuzzle_app
+    SetEnv DB_PASSWORD "COLOQUE_A_SENHA_LOCAL_AQUI"
+    SetEnv DB_TIMEZONE America/Sao_Paulo
+
     ErrorLog "logs/zebrapuzzle-error.log"
     CustomLog "logs/zebrapuzzle-access.log" combined
 </VirtualHost>
-

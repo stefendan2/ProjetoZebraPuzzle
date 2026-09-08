@@ -5,9 +5,10 @@
     "license": "proprietary",
     "require": {
         "php": ">=8.2",
+        "ext-gd": "*",
+        "ext-mbstring": "*",
         "ext-pdo": "*",
-        "ext-pdo_mysql": "*",
-        "ext-mbstring": "*"
+        "ext-pdo_mysql": "*"
     },
     "autoload": {
         "psr-4": {
@@ -15,7 +16,8 @@
         }
     },
     "scripts": {
-        "test": "php tests/run.php"
+        "test": "php tests/run.php",
+        "test:integration": "php tests/integration_fase4.php"
     },
     "config": {
         "sort-packages": true

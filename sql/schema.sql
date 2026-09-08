@@ -157,6 +157,7 @@ CREATE TABLE IF NOT EXISTS verificacao_email (
     expira_em DATETIME NOT NULL,
     utilizado_em DATETIME NULL,
     criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    email_pendente VARCHAR(254) NULL,
     CONSTRAINT uq_verificacao_email_token UNIQUE (token_hash),
     CONSTRAINT fk_verificacao_email_jogador
         FOREIGN KEY (jogador_id) REFERENCES jogador (id)
@@ -164,21 +165,3 @@ CREATE TABLE IF NOT EXISTS verificacao_email (
     INDEX idx_verificacao_email_jogador (jogador_id),
     INDEX idx_verificacao_email_expiracao (expira_em)
 ) ENGINE=InnoDB;
-/*
-CREATE USER IF NOT EXISTS 'zebrapuzzle_app'@'127.0.0.1'
-IDENTIFIED BY '';
-
-GRANT SELECT, INSERT, UPDATE, DELETE
-ON zebraPuzzle.*
-TO 'zebrapuzzle_app'@'127.0.0.1';
-
-FLUSH PRIVILEGES;
-
-
-SELECT COUNT(*) AS fusos_carregados
-FROM mysql.time_zone_name;
-
-SELECT *
-FROM mysql.time_zone_name
-WHERE Name = 'America/Sao_Paulo';
-*/

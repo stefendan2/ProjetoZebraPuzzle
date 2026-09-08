@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/src/bootstrap.php';
 
+header('Referrer-Policy: no-referrer');
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+
 try {
     $router = criar_roteador();
     $registrarRotas = require dirname(__DIR__) . '/config/routes.php';
@@ -25,4 +29,3 @@ try {
         'mensagem' => $mensagem,
     ]);
 }
-

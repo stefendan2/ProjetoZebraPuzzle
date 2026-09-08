@@ -34,7 +34,15 @@ function cpf_valido(string $cpf): bool
 
 function email_valido(string $email): bool
 {
-    return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+    $email = trim($email);
+
+    return mb_strlen($email, 'UTF-8') <= 254
+        && filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+}
+
+function normalizar_email(string $email): string
+{
+    return mb_strtolower(trim($email), 'UTF-8');
 }
 
 function nome_usuario_valido(string $nome): bool
@@ -79,4 +87,3 @@ function validar_dados_conta(array $dados, bool $senhaObrigatoria = true): array
 
     return $erros;
 }
-

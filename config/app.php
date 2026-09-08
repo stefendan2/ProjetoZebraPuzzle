@@ -18,5 +18,6 @@ return [
     'timezone' => 'America/Sao_Paulo',
     'base_path' => $basePath,
     'session_name' => 'zebra_puzzle_session',
+    'email_token_ttl' => 86400,
+    'captcha_ttl' => 300,
 ];
-
