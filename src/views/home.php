@@ -9,6 +9,8 @@
                 <a class="btn btn-primary" href="<?= e(url('/cadastro')) ?>">Criar conta de jogador</a>
                 <a class="btn btn-outline-secondary" href="<?= e(url('/login')) ?>">Entrar</a>
             </div>
+        <?php elseif (usuario_logado('jogador')): ?>
+            <a class="btn btn-primary" href="<?= e(url('/desafio')) ?>">Abrir desafio do dia</a>
         <?php endif; ?>
     </div>
 </section>
@@ -28,13 +30,12 @@
     <div class="col-md-6">
         <article class="card h-100">
             <div class="card-body">
-                <h2 class="h4">Escopo preservado</h2>
+                <h2 class="h4">Desafio diário</h2>
                 <p class="mb-0">
-                    Temas, puzzle, cronômetro, leaderboard e ofensiva permanecem reservados
-                    às próximas fases do roadmap.
+                    O puzzle 5 × 5, suas dicas estruturadas, o cronômetro do servidor e o
+                    registro da resolução estão disponíveis. Ranking e ofensiva chegam depois.
                 </p>
             </div>
         </article>
     </div>
 </div>
-

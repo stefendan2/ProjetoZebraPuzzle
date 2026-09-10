@@ -15,6 +15,10 @@ if ((string) getenv('DB_PASSWORD') === '') {
     putenv('DB_PASSWORD=' . ($senhaBanco === false ? '' : rtrim($senhaBanco, "\r\n")));
     unset($senhaBanco);
 }
+if ((string) getenv('DB_PASSWORD') === '') {
+    fwrite(STDERR, "Nenhuma senha foi recebida. Execute novamente e digite a senha local quando solicitada.\n");
+    exit(2);
+}
 
 $falhas = [];
 $idsJogadores = [];
@@ -52,9 +56,9 @@ $montarTema = static function (string $nome): array {
         'descricao' => 'Registro temporário da integração da Fase 5.',
         'categorias' => [],
     ];
-    for ($categoria = 1; $categoria <= 5; $categoria++) {
+    for ($categoria = 0; $categoria < 5; $categoria++) {
         $valores = [];
-        for ($valor = 1; $valor <= 5; $valor++) {
+        for ($valor = 0; $valor < 5; $valor++) {
             $valores[] = [
                 'nome' => "Valor {$categoria}.{$valor} de {$nome}",
                 'posicao' => $valor,
@@ -62,6 +66,7 @@ $montarTema = static function (string $nome): array {
         }
         $tema['categorias'][] = [
             'nome' => "Categoria {$categoria} de {$nome}",
+            'prefixo' => "usa a categoria {$categoria}",
             'posicao' => $categoria,
             'valores' => $valores,
         ];
@@ -136,19 +141,21 @@ try {
     $temaIncompletoId = (int) $pdo->lastInsertId();
     $idsTemas[] = $temaIncompletoId;
     $inserirCategoria = $pdo->prepare(
-        'INSERT INTO tema_categoria (tema_id, nome, posicao) VALUES (:tema_id, :nome, :posicao)'
+        'INSERT INTO tema_categoria (tema_id, nome, prefixo, posicao)
+         VALUES (:tema_id, :nome, :prefixo, :posicao)'
     );
     $inserirValor = $pdo->prepare(
         'INSERT INTO tema_valor (categoria_id, nome, posicao) VALUES (:categoria_id, :nome, :posicao)'
     );
-    for ($categoria = 1; $categoria <= 4; $categoria++) {
+    for ($categoria = 0; $categoria < 4; $categoria++) {
         $inserirCategoria->execute([
             'tema_id' => $temaIncompletoId,
             'nome' => 'Categoria incompleta ' . $categoria,
+            'prefixo' => 'usa a categoria incompleta ' . $categoria,
             'posicao' => $categoria,
         ]);
         $categoriaId = (int) $pdo->lastInsertId();
-        for ($valor = 1; $valor <= 5; $valor++) {
+        for ($valor = 0; $valor < 5; $valor++) {
             $inserirValor->execute([
                 'categoria_id' => $categoriaId,
                 'nome' => "Valor incompleto {$categoria}.{$valor}",
@@ -174,12 +181,12 @@ try {
 
     $carregadoA = carregar_tema_completo($pdo, $temaAId, true);
     $verificar(
-        array_column($carregadoA['categorias'] ?? [], 'posicao') === [1, 2, 3, 4, 5],
+        array_column($carregadoA['categorias'] ?? [], 'posicao') === [0, 1, 2, 3, 4],
         'As categorias devem ser carregadas por posição.'
     );
     foreach (($carregadoA['categorias'] ?? []) as $categoria) {
         $verificar(
-            array_column($categoria['valores'], 'posicao') === [1, 2, 3, 4, 5],
+            array_column($categoria['valores'], 'posicao') === [0, 1, 2, 3, 4],
             'Os valores devem ser carregados por posição.'
         );
     }

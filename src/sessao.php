@@ -69,9 +69,106 @@ function encerrar_sessao_usuario(): void
         $_SESSION['captcha_login'],
         $_SESSION['csrf_token'],
         $_SESSION['_formularios'],
-        $_SESSION['_verificacao_email_desenvolvimento']
+        $_SESSION['_verificacao_email_desenvolvimento'],
+        $_SESSION['_desafios_em_andamento'],
+        $_SESSION['_resultado_desafio']
     );
     session_regenerate_id(true);
+}
+
+/** @return array{jogador_id:int, desafio_id:int, dia:string, tema_id:int, inicio_unix:float}|null */
+function tentativa_desafio_obter(int $jogadorId, int $desafioId): ?array
+{
+    $tentativa = $_SESSION['_desafios_em_andamento'][(string) $jogadorId][(string) $desafioId] ?? null;
+    if (!is_array($tentativa)
+        || (int) ($tentativa['jogador_id'] ?? 0) !== $jogadorId
+        || (int) ($tentativa['desafio_id'] ?? 0) !== $desafioId
+        || !is_string($tentativa['dia'] ?? null)
+        || (int) ($tentativa['tema_id'] ?? 0) < 1
+        || !is_float($tentativa['inicio_unix'] ?? null)
+        || $tentativa['inicio_unix'] <= 0
+    ) {
+        return null;
+    }
+
+    return [
+        'jogador_id' => $jogadorId,
+        'desafio_id' => $desafioId,
+        'dia' => $tentativa['dia'],
+        'tema_id' => (int) $tentativa['tema_id'],
+        'inicio_unix' => $tentativa['inicio_unix'],
+    ];
+}
+
+/** @return array{jogador_id:int, desafio_id:int, dia:string, tema_id:int, inicio_unix:float} */
+function iniciar_tentativa_desafio(
+    int $jogadorId,
+    int $desafioId,
+    string $dia,
+    int $temaId,
+    ?float $agora = null
+): array {
+    $existente = tentativa_desafio_obter($jogadorId, $desafioId);
+    if ($existente !== null) {
+        return $existente;
+    }
+    if ($jogadorId < 1 || $desafioId < 1 || $temaId < 1 || !classificar_data_iso($dia)) {
+        throw new InvalidArgumentException('Não foi possível iniciar uma tentativa com contexto inválido.');
+    }
+
+    $tentativa = [
+        'jogador_id' => $jogadorId,
+        'desafio_id' => $desafioId,
+        'dia' => $dia,
+        'tema_id' => $temaId,
+        'inicio_unix' => $agora ?? microtime(true),
+    ];
+    $_SESSION['_desafios_em_andamento'][(string) $jogadorId][(string) $desafioId] = $tentativa;
+    return $tentativa;
+}
+
+function tempo_decorrido_tentativa(array $tentativa, ?float $agora = null): int
+{
+    $inicio = $tentativa['inicio_unix'] ?? null;
+    if (!is_float($inicio) || $inicio <= 0) {
+        throw new InvalidArgumentException('O cronômetro da tentativa é inválido.');
+    }
+    $fim = $agora ?? microtime(true);
+    if ($fim < $inicio) {
+        throw new RuntimeException('O relógio do servidor não permite calcular o tempo da tentativa.');
+    }
+    return (int) round(($fim - $inicio) * 1000);
+}
+
+/** @return array<string, mixed>|null */
+function encerrar_tentativa_desafio(int $jogadorId, int $desafioId): ?array
+{
+    $tentativa = tentativa_desafio_obter($jogadorId, $desafioId);
+    unset($_SESSION['_desafios_em_andamento'][(string) $jogadorId][(string) $desafioId]);
+    if (($_SESSION['_desafios_em_andamento'][(string) $jogadorId] ?? []) === []) {
+        unset($_SESSION['_desafios_em_andamento'][(string) $jogadorId]);
+    }
+    return $tentativa;
+}
+
+/** @param array<string, mixed> $resultado */
+function resultado_desafio_guardar(array $resultado): void
+{
+    $_SESSION['_resultado_desafio'] = $resultado;
+}
+
+/** @return array<string, mixed>|null */
+function resultado_desafio_obter(int $jogadorId, ?string $dia = null): ?array
+{
+    $resultado = $_SESSION['_resultado_desafio'] ?? null;
+    if (!is_array($resultado) || (int) ($resultado['jogador_id'] ?? 0) !== $jogadorId) {
+        return null;
+    }
+    if ($dia !== null && (!isset($resultado['desafio_dia']) || $resultado['desafio_dia'] !== $dia)) {
+        unset($_SESSION['_resultado_desafio']);
+        return null;
+    }
+    return $resultado;
 }
 
 function exigir_login_jogador(): void

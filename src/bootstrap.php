@@ -27,12 +27,19 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 
 require_once __DIR__ . '/Core/Router.php';
 require_once __DIR__ . '/flash.php';
-require_once __DIR__ . '/sessao.php';
 require_once __DIR__ . '/validacao.php';
 require_once __DIR__ . '/layout.php';
 require_once __DIR__ . '/csrf.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/temas.php';
+require_once __DIR__ . '/desafio_formato.php';
+require_once __DIR__ . '/restricoes_desafio.php';
+require_once __DIR__ . '/verificador_csp.php';
+require_once __DIR__ . '/provedor_desafio.php';
+require_once __DIR__ . '/provedor_desafio_exemplo.php';
+require_once __DIR__ . '/desafios.php';
+require_once __DIR__ . '/resolucoes.php';
+require_once __DIR__ . '/sessao.php';
 require_once __DIR__ . '/contas.php';
 require_once __DIR__ . '/captcha.php';
 require_once __DIR__ . '/autenticacao.php';

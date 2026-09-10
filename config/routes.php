@@ -288,6 +288,231 @@ return static function (Router $router): void {
         redirecionar('/minha-conta');
     });
 
+    $router->get('/desafio', static function (): void {
+        exigir_login_jogador();
+        $pdo = db();
+        $jogadorId = (int) usuario_id();
+        $jogador = buscar_jogador_por_id($pdo, $jogadorId);
+        if ($jogador === null || (int) $jogador['ativo'] !== 1 || (int) $jogador['email_verificado'] !== 1) {
+            encerrar_sessao_usuario();
+            flash_adicionar('erro', 'A conta do jogador não está disponível.');
+            redirecionar('/login');
+        }
+
+        $dia = classificar_dia_desafio($_GET['dia'] ?? null);
+        if ($dia['status'] === 'futuro') {
+            http_response_code(403);
+            renderizar('erro', [
+                'titulo' => 'Dia futuro indisponível',
+                'mensagem' => 'Um desafio de data futura não pode ser aberto.',
+            ]);
+            return;
+        }
+        if ($dia['status'] !== 'ok' || !is_string($dia['dia'])) {
+            http_response_code(404);
+            renderizar('erro', [
+                'titulo' => 'Desafio não encontrado',
+                'mensagem' => 'A data informada não está disponível nesta fase.',
+            ]);
+            return;
+        }
+
+        if (!jogador_possui_acesso_no_dia($pdo, $jogadorId, $dia['dia'])) {
+            http_response_code(403);
+            renderizar('erro', [
+                'titulo' => 'Entrada diária necessária',
+                'mensagem' => 'Conclua o login e o captcha diário antes de abrir o desafio.',
+            ]);
+            return;
+        }
+
+        $temaEfetivo = carregar_tema_efetivo($pdo, $jogadorId);
+        if ($temaEfetivo === null) {
+            http_response_code(503);
+            header('Retry-After: 300');
+            renderizar('erro', [
+                'titulo' => 'Desafio temporariamente indisponível',
+                'mensagem' => 'Nenhum tema completo e ativo está disponível para montar o desafio.',
+            ]);
+            return;
+        }
+
+        try {
+            $desafio = provisionar_desafio_do_dia($pdo, $dia['dia']);
+        } catch (DesafioInvalidoException|InvalidArgumentException $erro) {
+            error_log($erro->getMessage());
+            http_response_code(503);
+            header('Retry-After: 300');
+            renderizar('erro', [
+                'titulo' => 'Desafio temporariamente indisponível',
+                'mensagem' => 'O desafio do dia está incompleto ou inconsistente.',
+            ]);
+            return;
+        }
+        $resolucaoAnterior = buscar_ultima_resolucao_jogador_dia($pdo, $jogadorId, $dia['dia']);
+        if ($resolucaoAnterior !== null) {
+            resultado_desafio_guardar($resolucaoAnterior);
+            redirecionar('/desafio/resultado');
+        }
+
+        $tentativa = tentativa_desafio_obter($jogadorId, (int) $desafio['id']);
+        if ($tentativa !== null) {
+            $temaDaTentativa = carregar_tema_completo($pdo, (int) $tentativa['tema_id'], false);
+            if ($temaDaTentativa !== null) {
+                $temaEfetivo = $temaDaTentativa;
+                $temaEfetivo['origem'] = 'tentativa';
+            } else {
+                encerrar_tentativa_desafio($jogadorId, (int) $desafio['id']);
+                $tentativa = null;
+            }
+        }
+        $tentativa ??= iniciar_tentativa_desafio(
+            $jogadorId,
+            (int) $desafio['id'],
+            $dia['dia'],
+            (int) $temaEfetivo['id']
+        );
+
+        $formulario = formulario_consumir('desafio');
+        $grade = [];
+        if ((int) ($formulario['dados']['desafio_id'] ?? 0) === (int) $desafio['id']
+            && (int) ($formulario['dados']['tema_id'] ?? 0) === (int) $temaEfetivo['id']
+            && is_array($formulario['dados']['grade'] ?? null)
+        ) {
+            $grade = $formulario['dados']['grade'];
+        }
+
+        renderizar('desafio', [
+            'titulo' => 'Desafio do dia',
+            'desafio' => $desafio,
+            'tema' => $temaEfetivo,
+            'dicas' => renderizar_dicas_para_tema($desafio['dicas'], $temaEfetivo),
+            'grade' => $grade,
+            'erros' => $formulario['erros'],
+            'tempoDecorridoMs' => tempo_decorrido_tentativa($tentativa),
+        ]);
+    });
+
+    $router->post('/desafio/finalizar', static function (): void {
+        exigir_login_jogador();
+        csrf_exigir_valido();
+        $pdo = db();
+        $jogadorId = (int) usuario_id();
+        $dia = dia_de_referencia();
+
+        $jogador = buscar_jogador_por_id($pdo, $jogadorId);
+        if ($jogador === null || (int) $jogador['ativo'] !== 1 || (int) $jogador['email_verificado'] !== 1) {
+            encerrar_sessao_usuario();
+            flash_adicionar('erro', 'A conta do jogador não está disponível.');
+            redirecionar('/login');
+        }
+
+        if (!jogador_possui_acesso_no_dia($pdo, $jogadorId, $dia)) {
+            http_response_code(403);
+            renderizar('erro', [
+                'titulo' => 'Entrada diária necessária',
+                'mensagem' => 'Conclua o login e o captcha diário antes de finalizar o desafio.',
+            ]);
+            return;
+        }
+
+        foreach (['jogador_id', 'tema_id', 'dia', 'tempo', 'inicio', 'fim', 'tempo_milisegundos', 'solucao'] as $campoReservado) {
+            if (array_key_exists($campoReservado, $_POST)) {
+                flash_adicionar('erro', 'A solicitação contém campos que não são aceitos. Nenhum resultado foi salvo.');
+                redirecionar('/desafio');
+            }
+        }
+
+        try {
+            $desafio = carregar_desafio_por_dia($pdo, $dia);
+        } catch (DesafioInvalidoException $erro) {
+            error_log($erro->getMessage());
+            http_response_code(503);
+            header('Retry-After: 300');
+            renderizar('erro', [
+                'titulo' => 'Desafio temporariamente indisponível',
+                'mensagem' => 'O desafio do dia está incompleto ou inconsistente.',
+            ]);
+            return;
+        }
+        if ($desafio === null) {
+            http_response_code(503);
+            renderizar('erro', [
+                'titulo' => 'Desafio temporariamente indisponível',
+                'mensagem' => 'O desafio do dia ainda não está disponível.',
+            ]);
+            return;
+        }
+
+        $tentativa = tentativa_desafio_obter($jogadorId, (int) $desafio['id']);
+        if ($tentativa === null || $tentativa['dia'] !== $dia) {
+            flash_adicionar('erro', 'O cronômetro da tentativa expirou. Abra o desafio novamente.');
+            redirecionar('/desafio');
+        }
+        $tema = carregar_tema_completo($pdo, (int) $tentativa['tema_id'], false);
+        if ($tema === null) {
+            flash_adicionar('erro', 'O tema usado no início da tentativa deixou de ser válido. Nenhum resultado foi salvo.');
+            redirecionar('/desafio');
+        }
+
+        $conversao = grade_visual_para_resposta($_POST['grade'] ?? null);
+        if (!$conversao['ok']) {
+            formulario_guardar('desafio', [
+                'desafio_id' => (int) $desafio['id'],
+                'tema_id' => (int) $tema['id'],
+                'grade' => $conversao['grade'],
+            ], ['grade' => implode(' ', $conversao['erros'])]);
+            flash_adicionar('erro', $conversao['status'] === 'incompleta'
+                ? 'Preencha as 25 células antes de finalizar.'
+                : 'A grade enviada é inválida. Nenhum resultado foi salvo.');
+            redirecionar('/desafio');
+        }
+
+        $solucao = solucao_lista_para_matriz($desafio['solucao']);
+        if (!resposta_confere_com_solucao($conversao['resposta'], $solucao)) {
+            formulario_guardar('desafio', [
+                'desafio_id' => (int) $desafio['id'],
+                'tema_id' => (int) $tema['id'],
+                'grade' => $conversao['grade'],
+            ], ['grade' => 'A combinação ainda não resolve o desafio.']);
+            flash_adicionar('erro', 'A combinação ainda não está correta. Revise as dicas e tente novamente.');
+            redirecionar('/desafio');
+        }
+
+        $resolucao = registrar_resolucao_concluida(
+            $pdo,
+            $jogadorId,
+            $desafio,
+            (int) $tentativa['tema_id'],
+            (float) $tentativa['inicio_unix']
+        );
+        $resolucao['tema_nome'] = (string) $tema['nome'];
+        encerrar_tentativa_desafio($jogadorId, (int) $desafio['id']);
+        formulario_consumir('desafio');
+        resultado_desafio_guardar($resolucao);
+        flash_adicionar('sucesso', 'Desafio concluído e resolução registrada.');
+        redirecionar('/desafio/resultado');
+    });
+
+    $router->get('/desafio/resultado', static function (): void {
+        exigir_login_jogador();
+        $jogadorId = (int) usuario_id();
+        $dia = dia_de_referencia();
+        $resultado = resultado_desafio_obter($jogadorId, $dia);
+        if ($resultado === null) {
+            $resultado = buscar_ultima_resolucao_jogador_dia(db(), $jogadorId, $dia);
+        }
+        if ($resultado === null) {
+            flash_adicionar('aviso', 'Conclua o desafio para visualizar o resultado.');
+            redirecionar('/area-jogador');
+        }
+
+        renderizar('resultado-desafio', [
+            'titulo' => 'Resultado do desafio',
+            'resultado' => $resultado,
+        ]);
+    });
+
     $router->get('/area-jogador', static function (): void {
         exigir_login_jogador();
         $pdo = db();

@@ -50,22 +50,15 @@ function autenticar_credenciais(PDO $pdo, string $tipo, string $email, string $s
 
 function jogador_possui_acesso_hoje(PDO $pdo, int $jogadorId): bool
 {
-    $statement = $pdo->prepare(
-        'SELECT 1 FROM acesso_diario
-         WHERE jogador_id = :jogador_id AND dia = CURRENT_DATE()
-         LIMIT 1'
-    );
-    $statement->execute(['jogador_id' => $jogadorId]);
-
-    return $statement->fetchColumn() !== false;
+    return jogador_possui_acesso_no_dia($pdo, $jogadorId, dia_de_referencia());
 }
 
 function registrar_acesso_diario(PDO $pdo, int $jogadorId): void
 {
     $statement = $pdo->prepare(
         'INSERT INTO acesso_diario (jogador_id, dia, captcha_validado_em)
-         VALUES (:jogador_id, CURRENT_DATE(), CURRENT_TIMESTAMP)
+         VALUES (:jogador_id, :dia, CURRENT_TIMESTAMP)
          ON DUPLICATE KEY UPDATE jogador_id = VALUES(jogador_id)'
     );
-    $statement->execute(['jogador_id' => $jogadorId]);
+    $statement->execute(['jogador_id' => $jogadorId, 'dia' => dia_de_referencia()]);
 }

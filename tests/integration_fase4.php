@@ -15,6 +15,10 @@ if ((string) getenv('DB_PASSWORD') === '') {
     putenv('DB_PASSWORD=' . ($senhaBanco === false ? '' : rtrim($senhaBanco, "\r\n")));
     unset($senhaBanco);
 }
+if ((string) getenv('DB_PASSWORD') === '') {
+    fwrite(STDERR, "Nenhuma senha foi recebida. Execute novamente e digite a senha local quando solicitada.\n");
+    exit(2);
+}
 
 $falhas = [];
 $idsJogadores = [];

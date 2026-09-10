@@ -48,9 +48,16 @@ function validar_estrutura_tema(array $tema): array
             $erros['categoria_' . $numeroCategoria . '_nome'] = 'O nome da categoria ' . $numeroCategoria . ' deve ter no máximo 100 caracteres.';
         }
 
+        $prefixoCategoria = $categoria['prefixo'] ?? null;
+        if (!is_string($prefixoCategoria) || trim($prefixoCategoria) === '') {
+            $erros['categoria_' . $numeroCategoria . '_prefixo'] = 'Informe o prefixo da categoria ' . $numeroCategoria . '.';
+        } elseif (mb_strlen(trim($prefixoCategoria), 'UTF-8') > 80) {
+            $erros['categoria_' . $numeroCategoria . '_prefixo'] = 'O prefixo da categoria deve ter no máximo 80 caracteres.';
+        }
+
         $posicaoCategoria = $categoria['posicao'] ?? null;
-        if (!is_int($posicaoCategoria) || $posicaoCategoria < 1 || $posicaoCategoria > 5) {
-            $erros['categoria_' . $numeroCategoria . '_posicao'] = 'A posição da categoria ' . $numeroCategoria . ' deve ser um inteiro entre 1 e 5.';
+        if (!is_int($posicaoCategoria) || $posicaoCategoria < 0 || $posicaoCategoria > 4) {
+            $erros['categoria_' . $numeroCategoria . '_posicao'] = 'A posição da categoria ' . $numeroCategoria . ' deve ser um inteiro entre 0 e 4.';
         } elseif (isset($posicoesCategorias[$posicaoCategoria])) {
             $erros['categoria_' . $numeroCategoria . '_posicao'] = 'As posições das categorias não podem se repetir.';
         } else {
@@ -84,8 +91,8 @@ function validar_estrutura_tema(array $tema): array
             }
 
             $posicaoValor = $valor['posicao'] ?? null;
-            if (!is_int($posicaoValor) || $posicaoValor < 1 || $posicaoValor > 5) {
-                $erros[$chave . '_posicao'] = 'A posição do valor deve ser um inteiro entre 1 e 5.';
+            if (!is_int($posicaoValor) || $posicaoValor < 0 || $posicaoValor > 4) {
+                $erros[$chave . '_posicao'] = 'A posição do valor deve ser um inteiro entre 0 e 4.';
             } elseif (isset($posicoesValores[$posicaoValor])) {
                 $erros[$chave . '_posicao'] = 'As posições dos valores de uma categoria não podem se repetir.';
             } else {
@@ -107,7 +114,8 @@ function carregar_tema_completo(PDO $pdo, int $temaId, bool $somenteAtivo = true
     $sql =
         'SELECT t.id AS tema_id, t.nome AS tema_nome, t.descricao AS tema_descricao,
                 t.ativo AS tema_ativo, t.criado_em AS tema_criado_em,
-                tc.id AS categoria_id, tc.nome AS categoria_nome, tc.posicao AS categoria_posicao,
+                tc.id AS categoria_id, tc.nome AS categoria_nome, tc.prefixo AS categoria_prefixo,
+                tc.posicao AS categoria_posicao,
                 tv.id AS valor_id, tv.nome AS valor_nome, tv.posicao AS valor_posicao
          FROM tema t
          LEFT JOIN tema_categoria tc ON tc.tema_id = t.id
@@ -147,6 +155,7 @@ function carregar_tema_completo(PDO $pdo, int $temaId, bool $somenteAtivo = true
             $tema['categorias'][] = [
                 'id' => $categoriaId,
                 'nome' => (string) $linha['categoria_nome'],
+                'prefixo' => (string) ($linha['categoria_prefixo'] ?? ''),
                 'posicao' => (int) $linha['categoria_posicao'],
                 'valores' => [],
             ];
@@ -258,8 +267,8 @@ function gravar_tema_validado(PDO $pdo, array $tema): array
         $temaId = (int) $pdo->lastInsertId();
 
         $inserirCategoria = $pdo->prepare(
-            'INSERT INTO tema_categoria (tema_id, nome, posicao)
-             VALUES (:tema_id, :nome, :posicao)'
+            'INSERT INTO tema_categoria (tema_id, nome, prefixo, posicao)
+             VALUES (:tema_id, :nome, :prefixo, :posicao)'
         );
         $inserirValor = $pdo->prepare(
             'INSERT INTO tema_valor (categoria_id, nome, posicao)
@@ -270,6 +279,7 @@ function gravar_tema_validado(PDO $pdo, array $tema): array
             $inserirCategoria->execute([
                 'tema_id' => $temaId,
                 'nome' => trim((string) $categoria['nome']),
+                'prefixo' => trim((string) $categoria['prefixo']),
                 'posicao' => (int) $categoria['posicao'],
             ]);
             $categoriaId = (int) $pdo->lastInsertId();

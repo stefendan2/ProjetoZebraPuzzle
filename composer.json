@@ -17,8 +17,12 @@
     },
     "scripts": {
         "test": "php tests/run.php",
+        "test:fase6": "php tests/fase6.php",
         "test:integration": "php tests/integration_fase4.php",
-        "test:integration:fase5": "php tests/integration_fase5.php"
+        "test:integration:fase5": "php tests/integration_fase5.php",
+        "test:integration:fase6": "php tests/integration_fase6.php",
+        "desafio:validar": "php bin/validar-desafio-exemplo.php",
+        "desafio:provisionar": "php bin/provisionar-desafio.php"
     },
     "config": {
         "sort-packages": true

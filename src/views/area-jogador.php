@@ -3,7 +3,10 @@
         <h1 class="mb-1">Área do jogador</h1>
         <p class="text-secondary mb-0">Olá, <?= e($jogador['nome_usuario'] ?? 'jogador') ?>.</p>
     </div>
-    <a class="btn btn-outline-primary" href="<?= e(url('/minha-conta')) ?>">Editar minha conta</a>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-primary" href="<?= e(url('/desafio')) ?>">Jogar desafio do dia</a>
+        <a class="btn btn-outline-primary" href="<?= e(url('/minha-conta')) ?>">Editar minha conta</a>
+    </div>
 </div>
 
 <div class="card mb-4">
@@ -33,6 +36,7 @@
                 <p class="text-secondary mb-3"><?= e($temaEfetivo['descricao']) ?></p>
             <?php endif; ?>
             <a class="btn btn-sm btn-outline-primary" href="<?= e(url('/minha-conta')) ?>">Ver ou trocar tema</a>
+            <a class="btn btn-sm btn-primary" href="<?= e(url('/desafio')) ?>">Abrir desafio</a>
         <?php else: ?>
             <div class="alert alert-warning mb-0" role="alert">
                 Nenhum tema válido está disponível. As telas dependentes de tema permanecerão indisponíveis até a correção do catálogo.

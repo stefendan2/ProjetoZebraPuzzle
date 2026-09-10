@@ -36,3 +36,62 @@ main {
 .captcha-box img {
     display: block;
 }
+
+.cronometro {
+    min-width: 8rem;
+    padding: 0.65rem 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.5rem;
+    background: #fff;
+    text-align: center;
+}
+
+.cronometro strong {
+    font-size: 1.5rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.desafio-grade-wrapper {
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    background: #fff;
+}
+
+.desafio-grade {
+    min-width: 920px;
+    margin-bottom: 0;
+}
+
+.desafio-grade th,
+.desafio-grade td {
+    padding: 0.65rem;
+}
+
+.desafio-grade .form-select {
+    min-width: 9rem;
+}
+
+.lista-dicas {
+    padding-left: 1.5rem;
+}
+
+.dica-item {
+    padding: 0.65rem 1rem 0.65rem 0.35rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.dica-status {
+    display: inline-block;
+    width: 1.25rem;
+    font-weight: 700;
+}
+
+.dica-satisfeita {
+    color: #146c43;
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+}
+
+.dica-nao-satisfeita .dica-status {
+    color: #b02a37;
+}

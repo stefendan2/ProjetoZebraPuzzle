@@ -19,17 +19,18 @@ CREATE TABLE IF NOT EXISTS tema_categoria (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tema_id BIGINT UNSIGNED NOT NULL,
     nome VARCHAR(100) NOT NULL,
+    prefixo VARCHAR(80) NULL,
     posicao TINYINT UNSIGNED NOT NULL,
     criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uq_tema_categoria_nome UNIQUE (tema_id, nome),
     CONSTRAINT uq_tema_categoria_posicao UNIQUE (tema_id, posicao),
-    CONSTRAINT ck_tema_categoria_posicao CHECK (posicao BETWEEN 1 AND 5),
+    CONSTRAINT ck_tema_categoria_posicao CHECK (posicao BETWEEN 0 AND 4),
     CONSTRAINT fk_tema_categoria_tema
         FOREIGN KEY (tema_id) REFERENCES tema (id)
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
--- A faixa e a unicidade limitam as posições a 1..5. A validação da Fase 5
+-- A faixa e a unicidade limitam as posições a 0..4. A validação da aplicação
 -- assegura em transação que cada tema termine com exatamente 5 categorias.
 
 CREATE TABLE IF NOT EXISTS tema_valor (
@@ -40,7 +41,7 @@ CREATE TABLE IF NOT EXISTS tema_valor (
     criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uq_tema_valor_nome UNIQUE (categoria_id, nome),
     CONSTRAINT uq_tema_valor_posicao UNIQUE (categoria_id, posicao),
-    CONSTRAINT ck_tema_valor_posicao CHECK (posicao BETWEEN 1 AND 5),
+    CONSTRAINT ck_tema_valor_posicao CHECK (posicao BETWEEN 0 AND 4),
     CONSTRAINT fk_tema_valor_categoria
         FOREIGN KEY (categoria_id) REFERENCES tema_categoria (id)
         ON UPDATE CASCADE ON DELETE RESTRICT
@@ -87,10 +88,87 @@ CREATE TABLE IF NOT EXISTS administrador (
 CREATE TABLE IF NOT EXISTS desafio_diario (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     dia DATE NOT NULL,
-    solucao_json JSON NOT NULL,
-    pistas_json JSON NOT NULL,
+    solucao_json JSON NULL,
+    pistas_json JSON NULL,
     criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uq_desafio_diario_dia UNIQUE (dia)
+) ENGINE=InnoDB;
+
+-- A partir da Fase 6, as tabelas relacionais abaixo são a fonte de verdade.
+-- As colunas JSON permanecem apenas para compatibilidade com importações legadas.
+CREATE TABLE IF NOT EXISTS desafio_atribuicao (
+    desafio_id BIGINT UNSIGNED NOT NULL,
+    categoria_posicao TINYINT UNSIGNED NOT NULL,
+    informacao_posicao TINYINT UNSIGNED NOT NULL,
+    casa_posicao TINYINT UNSIGNED NOT NULL,
+    PRIMARY KEY (desafio_id, categoria_posicao, informacao_posicao),
+    CONSTRAINT uq_desafio_atribuicao_casa
+        UNIQUE (desafio_id, categoria_posicao, casa_posicao),
+    CONSTRAINT ck_desafio_atribuicao_categoria
+        CHECK (categoria_posicao BETWEEN 0 AND 4),
+    CONSTRAINT ck_desafio_atribuicao_informacao
+        CHECK (informacao_posicao BETWEEN 0 AND 4),
+    CONSTRAINT ck_desafio_atribuicao_casa
+        CHECK (casa_posicao BETWEEN 0 AND 4),
+    CONSTRAINT fk_desafio_atribuicao_desafio
+        FOREIGN KEY (desafio_id) REFERENCES desafio_diario (id)
+        ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS relacao_dica (
+    codigo VARCHAR(5) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
+    nome VARCHAR(80) NOT NULL,
+    aridade TINYINT UNSIGNED NOT NULL,
+    conectivo VARCHAR(100) NOT NULL,
+    CONSTRAINT ck_relacao_dica_aridade CHECK (aridade IN (1, 2))
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS desafio_dica (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    desafio_id BIGINT UNSIGNED NOT NULL,
+    ordem TINYINT UNSIGNED NOT NULL,
+    relacao_codigo VARCHAR(5) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    cat_info1 TINYINT UNSIGNED NOT NULL,
+    pos_info1 TINYINT UNSIGNED NOT NULL,
+    cat_info2 TINYINT UNSIGNED NULL,
+    pos_info2 TINYINT UNSIGNED NULL,
+    valor_fixo TINYINT UNSIGNED NULL,
+    CONSTRAINT uq_desafio_dica_ordem UNIQUE (desafio_id, ordem),
+    CONSTRAINT ck_desafio_dica_ordem CHECK (ordem BETWEEN 1 AND 255),
+    CONSTRAINT ck_desafio_dica_info1
+        CHECK (cat_info1 BETWEEN 0 AND 4 AND pos_info1 BETWEEN 0 AND 4),
+    CONSTRAINT ck_desafio_dica_info2
+        CHECK (
+            (cat_info2 IS NULL AND pos_info2 IS NULL)
+            OR
+            (cat_info2 IS NOT NULL AND pos_info2 IS NOT NULL
+                AND cat_info2 BETWEEN 0 AND 4 AND pos_info2 BETWEEN 0 AND 4)
+        ),
+    CONSTRAINT ck_desafio_dica_forma
+        CHECK (
+            (relacao_codigo = 'CERT'
+                AND cat_info2 IS NULL AND pos_info2 IS NULL
+                AND valor_fixo IS NOT NULL AND valor_fixo BETWEEN 0 AND 4)
+            OR
+            (relacao_codigo IN ('EQ', 'M1', 'PM1')
+                AND cat_info2 IS NOT NULL AND pos_info2 IS NOT NULL
+                AND valor_fixo IS NULL)
+        ),
+    CONSTRAINT fk_desafio_dica_desafio
+        FOREIGN KEY (desafio_id) REFERENCES desafio_diario (id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_desafio_dica_relacao
+        FOREIGN KEY (relacao_codigo) REFERENCES relacao_dica (codigo)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_desafio_dica_info1
+        FOREIGN KEY (desafio_id, cat_info1, pos_info1)
+        REFERENCES desafio_atribuicao (desafio_id, categoria_posicao, informacao_posicao)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_desafio_dica_info2
+        FOREIGN KEY (desafio_id, cat_info2, pos_info2)
+        REFERENCES desafio_atribuicao (desafio_id, categoria_posicao, informacao_posicao)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    INDEX idx_desafio_dica_relacao (relacao_codigo)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS resolucao (

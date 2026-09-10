@@ -24,10 +24,18 @@ require dirname(__DIR__) . '/src/layout.php';
 require dirname(__DIR__) . '/src/csrf.php';
 require dirname(__DIR__) . '/src/sessao.php';
 require dirname(__DIR__) . '/src/temas.php';
+require dirname(__DIR__) . '/src/desafio_formato.php';
+require dirname(__DIR__) . '/src/restricoes_desafio.php';
+require dirname(__DIR__) . '/src/verificador_csp.php';
+require dirname(__DIR__) . '/src/provedor_desafio.php';
+require dirname(__DIR__) . '/src/provedor_desafio_exemplo.php';
+require dirname(__DIR__) . '/src/desafios.php';
+require dirname(__DIR__) . '/src/resolucoes.php';
 require dirname(__DIR__) . '/src/contas.php';
 require dirname(__DIR__) . '/src/captcha.php';
+require __DIR__ . '/fase6.php';
 
-session_id('fase5-' . bin2hex(random_bytes(8)));
+session_id('fase6-' . bin2hex(random_bytes(8)));
 session_start();
 $_SESSION = [];
 $falhas = [];
@@ -135,13 +143,14 @@ $temaCompleto = [
     'descricao' => 'Estrutura usada apenas pelos testes automatizados.',
     'categorias' => [],
 ];
-for ($categoria = 1; $categoria <= 5; $categoria++) {
+for ($categoria = 0; $categoria < 5; $categoria++) {
     $valores = [];
-    for ($valor = 1; $valor <= 5; $valor++) {
+    for ($valor = 0; $valor < 5; $valor++) {
         $valores[] = ['nome' => "Valor {$categoria}.{$valor}", 'posicao' => $valor];
     }
     $temaCompleto['categorias'][] = [
         'nome' => 'Categoria ' . $categoria,
+        'prefixo' => 'usa a categoria ' . $categoria,
         'posicao' => $categoria,
         'valores' => $valores,
     ];
@@ -156,7 +165,8 @@ $verificar(validar_estrutura_tema($temaQuatroCategorias) !== [], 'Um tema com 4 
 $temaSeisCategorias = $temaCompleto;
 $temaSeisCategorias['categorias'][] = [
     'nome' => 'Categoria 6',
-    'posicao' => 6,
+    'prefixo' => 'usa a categoria extra',
+    'posicao' => 5,
     'valores' => $temaCompleto['categorias'][0]['valores'],
 ];
 $verificar(validar_estrutura_tema($temaSeisCategorias) !== [], 'Um tema com 6 categorias deve ser rejeitado.');
@@ -166,15 +176,15 @@ array_pop($categoriaQuatroValores['categorias'][0]['valores']);
 $verificar(validar_estrutura_tema($categoriaQuatroValores) !== [], 'Uma categoria com 4 valores deve ser rejeitada.');
 
 $categoriaSeisValores = $temaCompleto;
-$categoriaSeisValores['categorias'][0]['valores'][] = ['nome' => 'Sexto valor', 'posicao' => 6];
+$categoriaSeisValores['categorias'][0]['valores'][] = ['nome' => 'Sexto valor', 'posicao' => 5];
 $verificar(validar_estrutura_tema($categoriaSeisValores) !== [], 'Uma categoria com 6 valores deve ser rejeitada.');
 
 $posicaoAusente = $temaCompleto;
-$posicaoAusente['categorias'][4]['posicao'] = 6;
+$posicaoAusente['categorias'][4]['posicao'] = 5;
 $verificar(validar_estrutura_tema($posicaoAusente) !== [], 'Uma posição ausente deve ser rejeitada.');
 
 $posicaoRepetida = $temaCompleto;
-$posicaoRepetida['categorias'][1]['posicao'] = 1;
+$posicaoRepetida['categorias'][1]['posicao'] = 0;
 $verificar(validar_estrutura_tema($posicaoRepetida) !== [], 'Uma posição repetida deve ser rejeitada.');
 
 $nomeVazio = $temaCompleto;
@@ -204,6 +214,9 @@ foreach ([
     'tema_categoria',
     'tema_valor',
     'desafio_diario',
+    'desafio_atribuicao',
+    'relacao_dica',
+    'desafio_dica',
     'resolucao',
     'leaderboard',
     'acesso_diario',
@@ -216,12 +229,16 @@ foreach ([
 }
 
 $verificar(is_string($schema) && str_contains($schema, 'email_pendente VARCHAR(254)'), 'O schema deve suportar e-mail pendente.');
+$verificar(is_string($schema) && str_contains($schema, 'prefixo VARCHAR(80)'), 'O schema deve suportar os prefixos temáticos.');
+$verificar(is_string($schema) && str_contains($schema, 'CHECK (posicao BETWEEN 0 AND 4)'), 'As posições temáticas devem usar 0..4.');
 $verificar(is_string($schema) && !str_contains($schema, 'IDENTIFIED BY'), 'O schema não deve conter credenciais.');
 $verificar(is_string($rotas) && str_contains($rotas, "post('/logout'"), 'O logout deve aceitar POST.');
 $verificar(is_string($rotas) && !str_contains($rotas, "get('/logout'"), 'O logout não deve aceitar GET.');
 $verificar(is_string($rotas) && str_contains($rotas, 'csrf_exigir_valido()'), 'Formulários mutáveis devem exigir CSRF.');
 $verificar(is_string($rotas) && str_contains($rotas, "post('/minha-conta/tema'"), 'A troca de tema deve aceitar POST.');
 $verificar(is_string($rotas) && !str_contains($rotas, "get('/minha-conta/tema'"), 'A troca de tema não deve aceitar GET.');
+$verificar(is_string($rotas) && str_contains($rotas, "get('/desafio'"), 'O desafio deve possuir rota GET.');
+$verificar(is_string($rotas) && str_contains($rotas, "post('/desafio/finalizar'"), 'A finalização deve possuir rota POST.');
 $verificar(
     is_string($seedTemas)
     && str_contains($seedTemas, "'Clássico'")
@@ -233,6 +250,8 @@ $verificar(is_string($seedTemas) && str_contains($seedTemas, 'START TRANSACTION'
 $verificar(is_string($seedTemas) && str_contains($seedTemas, 'SIGNAL SQLSTATE'), 'O seed deve rejeitar catálogo incompleto.');
 $verificar(is_string($seedTemas) && !str_contains($seedTemas, 'IDENTIFIED BY'), 'O seed não deve conter credenciais.');
 $verificar(is_string($seedTemas) && !str_contains($seedTemas, 'TRUNCATE'), 'O seed não deve truncar dados existentes.');
+
+executar_testes_unitarios_fase6($verificar);
 
 if ($falhas !== []) {
     session_destroy();
