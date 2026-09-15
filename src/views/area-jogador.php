@@ -5,6 +5,8 @@
     </div>
     <div class="d-flex flex-wrap gap-2">
         <a class="btn btn-primary" href="<?= e(url('/desafio')) ?>">Jogar desafio do dia</a>
+        <a class="btn btn-outline-primary" href="<?= e(url('/historico')) ?>">Desafios anteriores</a>
+        <a class="btn btn-outline-primary" href="<?= e(url('/leaderboard')) ?>">Leaderboard</a>
         <a class="btn btn-outline-primary" href="<?= e(url('/minha-conta')) ?>">Editar minha conta</a>
     </div>
 </div>

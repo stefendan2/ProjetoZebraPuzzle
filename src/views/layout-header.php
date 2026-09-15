@@ -15,6 +15,8 @@
             <?php if (usuario_logado('jogador')): ?>
                 <a class="btn btn-sm btn-outline-light" href="<?= e(url('/area-jogador')) ?>">Área do jogador</a>
                 <a class="btn btn-sm btn-primary" href="<?= e(url('/desafio')) ?>">Desafio</a>
+                <a class="btn btn-sm btn-outline-light" href="<?= e(url('/historico')) ?>">Histórico</a>
+                <a class="btn btn-sm btn-outline-light" href="<?= e(url('/leaderboard')) ?>">Leaderboard</a>
                 <a class="btn btn-sm btn-outline-light" href="<?= e(url('/minha-conta')) ?>">Minha conta</a>
             <?php elseif (usuario_logado('administrador')): ?>
                 <a class="btn btn-sm btn-outline-light" href="<?= e(url('/area-admin')) ?>">Área administrativa</a>

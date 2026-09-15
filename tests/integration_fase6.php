@@ -207,6 +207,7 @@ try {
     );
     foreach ($idsJogadores as $jogadorId) {
         $inserirAcesso->execute(['jogador_id' => $jogadorId, 'dia' => $diaPrincipal]);
+        registrar_acesso_diario($pdo, $jogadorId);
     }
     $verificar(jogador_possui_acesso_no_dia($pdo, $idsJogadores[0], $diaPrincipal), 'Entrada diária registrada deve liberar o jogador.');
 
@@ -221,16 +222,14 @@ try {
     $antesIncorreta->execute(['jogador_id' => $idsJogadores[0], 'dia' => $diaPrincipal]);
     $verificar((int) $antesIncorreta->fetchColumn() === $totalAntes, 'Resposta incorreta não deve inserir resolução.');
 
-    $resolucao = registrar_resolucao_concluida(
-        $pdo,
-        $idsJogadores[0],
-        $desafio,
-        (int) $temas[0]['id'],
-        1000.0,
-        1002.5
-    );
+    $inicioFase6 = dia_de_referencia() . ' 12:00:00.000000';
+    $fimFase6 = dia_de_referencia() . ' 12:00:02.500000';
+    $tentativaFase6 = iniciar_ou_reutilizar_tentativa($pdo, $idsJogadores[0], (int) $desafio['id'],
+        (int) $temas[0]['id'], static fn (): string => $inicioFase6);
+    $resolucao = concluir_tentativa_e_registrar_resolucao($pdo, $idsJogadores[0], $tentativaFase6['id'],
+        solucao_lista_para_matriz($desafio['solucao']), static fn (): string => $fimFase6);
     $verificar((int) $resolucao['tempo_milisegundos'] === 2500, 'O tempo deve ser calculado pelo servidor.');
-    $verificar((int) $resolucao['elegivel_leaderboard'] === 0, 'A elegibilidade deve permanecer provisoriamente zero.');
+    $verificar((int) $resolucao['elegivel_leaderboard'] === 0, 'BR-008: conclusão histórica permanece fora do ranking.');
     $verificar((int) $resolucao['tema_id'] === (int) $temas[0]['id'], 'A resolução deve guardar o tema realmente usado.');
     $carregada = buscar_ultima_resolucao_jogador_dia($pdo, $idsJogadores[0], $diaPrincipal);
     $verificar($carregada !== null, 'A resolução completa deve ser recuperável no histórico.');
@@ -238,14 +237,15 @@ try {
         $verificar(array_key_exists($campo, $carregada ?? []), "A resolução deve conter o campo obrigatório {$campo}.");
     }
 
+    $tentativaFalhaFase6 = iniciar_ou_reutilizar_tentativa($pdo, $idsJogadores[1], (int) $desafio['id'],
+        (int) $temas[1]['id'], static fn (): string => $inicioFase6);
     try {
-        registrar_resolucao_concluida(
+        concluir_tentativa_e_registrar_resolucao(
             $pdo,
             $idsJogadores[1],
-            $desafio,
-            (int) $temas[1]['id'],
-            2000.0,
-            2001.0,
+            $tentativaFalhaFase6['id'],
+            solucao_lista_para_matriz($desafio['solucao']),
+            static fn (): string => $fimFase6,
             static function (string $etapa): void {
                 throw new RuntimeException('Falha controlada na resolução.');
             }
@@ -269,8 +269,10 @@ try {
 } finally {
     if (isset($pdo) && $pdo instanceof PDO) {
         foreach ($idsJogadores as $jogadorId) {
-            $statement = $pdo->prepare('DELETE FROM resolucao WHERE jogador_id = :id');
-            $statement->execute(['id' => $jogadorId]);
+            foreach (['leaderboard', 'resolucao', 'tentativa_desafio'] as $tabela) {
+                $statement = $pdo->prepare("DELETE FROM {$tabela} WHERE jogador_id = :id");
+                $statement->execute(['id' => $jogadorId]);
+            }
         }
         foreach ($idsJogadores as $jogadorId) {
             $statement = $pdo->prepare('DELETE FROM jogador WHERE id = :id');

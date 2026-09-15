@@ -95,3 +95,6 @@ main {
 .dica-nao-satisfeita .dica-status {
     color: #b02a37;
 }
+:focus-visible { outline: 3px solid #1265bd; outline-offset: 3px; }
+.tabela-leaderboard td { overflow-wrap: anywhere; }
+.tempo-ranking { white-space: nowrap; font-variant-numeric: tabular-nums; }

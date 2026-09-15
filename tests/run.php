@@ -4,6 +4,23 @@ declare(strict_types=1);
 
 use ZebraPuzzle\Core\Router;
 
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+if (in_array('--lint', $argv, true)) {
+    $falhasSintaxe = 0;
+    $totalSintaxe = 0;
+    foreach (['src','config','public','tests','bin','resources'] as $pasta) {
+        $arquivos = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(dirname(__DIR__) . '/' . $pasta, FilesystemIterator::SKIP_DOTS));
+        foreach ($arquivos as $arquivo) {
+            if (!$arquivo->isFile() || $arquivo->getExtension() !== 'php') { continue; }
+            $processo = proc_open([PHP_BINARY, '-l', $arquivo->getPathname()], [0 => STDIN, 1 => STDOUT, 2 => STDERR], $pipes);
+            if (!is_resource($processo) || proc_close($processo) !== 0) { $falhasSintaxe++; }
+            $totalSintaxe++;
+        }
+    }
+    fwrite(STDOUT, "Sintaxe: {$totalSintaxe} arquivos; {$falhasSintaxe} falhas.\n");
+    exit($falhasSintaxe === 0 ? 0 : 1);
+}
+
 $GLOBALS['app_config'] = [
     'base_path' => '',
     'captcha_ttl' => 300,
@@ -30,10 +47,14 @@ require dirname(__DIR__) . '/src/verificador_csp.php';
 require dirname(__DIR__) . '/src/provedor_desafio.php';
 require dirname(__DIR__) . '/src/provedor_desafio_exemplo.php';
 require dirname(__DIR__) . '/src/desafios.php';
+require dirname(__DIR__) . '/src/elegibilidade.php';
+require dirname(__DIR__) . '/src/tentativas.php';
+require dirname(__DIR__) . '/src/leaderboard.php';
 require dirname(__DIR__) . '/src/resolucoes.php';
 require dirname(__DIR__) . '/src/contas.php';
 require dirname(__DIR__) . '/src/captcha.php';
 require __DIR__ . '/fase6.php';
+require __DIR__ . '/fase7.php';
 
 session_id('fase6-' . bin2hex(random_bytes(8)));
 session_start();
@@ -252,6 +273,7 @@ $verificar(is_string($seedTemas) && !str_contains($seedTemas, 'IDENTIFIED BY'), 
 $verificar(is_string($seedTemas) && !str_contains($seedTemas, 'TRUNCATE'), 'O seed não deve truncar dados existentes.');
 
 executar_testes_unitarios_fase6($verificar);
+executar_testes_unitarios_fase7($verificar);
 
 if ($falhas !== []) {
     session_destroy();

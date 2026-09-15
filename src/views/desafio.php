@@ -1,8 +1,8 @@
 <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
     <div>
-        <h1 class="mb-1">Desafio do dia</h1>
+        <h1 class="mb-1"><?= !empty($historico) ? 'Desafio anterior' : 'Desafio do dia' ?></h1>
         <p class="text-secondary mb-0">
-            Dia <?= e($desafio['dia']) ?> · Tema <?= e($tema['nome']) ?> · Desafio #<?= e($desafio['id']) ?>
+            Dia <?= e($desafio['dia']) ?> · Tema <?= e($tema['nome']) ?>
         </p>
     </div>
     <div class="cronometro" aria-label="Tempo decorrido">
@@ -12,8 +12,11 @@
 </div>
 
 <div class="alert alert-info" role="note">
-    Cada linha deve usar suas cinco opções exatamente uma vez. As casas, categorias e informações seguem índices lógicos de 0 a 4.
+    Cada linha deve usar suas cinco opções exatamente uma vez. O tempo continua ao atualizar ou sair da conta; o tema desta tentativa permanece o mesmo.
 </div>
+<?php if (!empty($historico)): ?>
+    <p class="alert alert-warning" role="note">Este desafio é anterior a hoje. Sua conclusão ficará no histórico, sem alterar o ranking original.</p>
+<?php endif; ?>
 
 <?php if (isset($erros['grade'])): ?>
     <div class="alert alert-danger" role="alert"><?= e($erros['grade']) ?></div>
@@ -21,6 +24,7 @@
 
 <form method="post" action="<?= e(url('/desafio/finalizar')) ?>" id="form-desafio" novalidate>
     <?= csrf_campo() ?>
+    <input type="hidden" name="tentativa_id" value="<?= e($tentativa['id']) ?>">
     <div class="table-responsive desafio-grade-wrapper mb-3">
         <table class="table desafio-grade align-middle">
             <thead>

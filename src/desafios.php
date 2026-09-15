@@ -68,6 +68,26 @@ function carregar_desafio_por_id(PDO $pdo, int $desafioId): ?array
     return is_array($registro) ? carregar_desafio_normalizado($pdo, $registro) : null;
 }
 
+/** @return list<array{dia:string}> */
+function listar_desafios_anteriores_disponiveis(PDO $pdo, int $jogadorId): array
+{
+    if ($jogadorId < 1) {
+        throw new InvalidArgumentException('O jogador do histórico é inválido.');
+    }
+    $statement = $pdo->query('SELECT dia FROM desafio_diario WHERE dia < CURRENT_DATE() ORDER BY dia DESC');
+    $dias = [];
+    foreach ($statement->fetchAll() as $linha) {
+        try {
+            if (carregar_desafio_por_dia($pdo, (string) $linha['dia']) !== null) {
+                $dias[] = ['dia' => (string) $linha['dia']];
+            }
+        } catch (DesafioInvalidoException $erro) {
+            error_log('Histórico: desafio incompleto não foi listado. Dia ' . (string) $linha['dia']);
+        }
+    }
+    return $dias;
+}
+
 /** @param array<string, mixed> $registro @return array<string, mixed> */
 function carregar_desafio_normalizado(PDO $pdo, array $registro): array
 {

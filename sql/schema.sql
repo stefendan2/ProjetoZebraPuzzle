@@ -171,8 +171,39 @@ CREATE TABLE IF NOT EXISTS desafio_dica (
     INDEX idx_desafio_dica_relacao (relacao_codigo)
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS tentativa_desafio (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    jogador_id BIGINT UNSIGNED NOT NULL,
+    desafio_id BIGINT UNSIGNED NOT NULL,
+    tema_id BIGINT UNSIGNED NOT NULL,
+    iniciada_em DATETIME(6) NOT NULL,
+    finalizada_em DATETIME(6) NULL,
+    aberta_chave TINYINT NULL DEFAULT 1,
+    criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT ck_tentativa_intervalo
+        CHECK (finalizada_em IS NULL OR finalizada_em >= iniciada_em),
+    CONSTRAINT ck_tentativa_aberta
+        CHECK ((finalizada_em IS NULL AND aberta_chave IS NOT NULL AND aberta_chave = 1)
+            OR (finalizada_em IS NOT NULL AND aberta_chave IS NULL)),
+    CONSTRAINT uq_tentativa_aberta
+        UNIQUE (jogador_id, desafio_id, aberta_chave),
+    CONSTRAINT fk_tentativa_jogador
+        FOREIGN KEY (jogador_id) REFERENCES jogador (id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_tentativa_desafio
+        FOREIGN KEY (desafio_id) REFERENCES desafio_diario (id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_tentativa_tema
+        FOREIGN KEY (tema_id) REFERENCES tema (id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    INDEX idx_tentativa_jogador_inicio (jogador_id, iniciada_em),
+    INDEX idx_tentativa_desafio_estado (desafio_id, finalizada_em)
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS resolucao (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tentativa_id BIGINT UNSIGNED NOT NULL,
     jogador_id BIGINT UNSIGNED NOT NULL,
     desafio_dia DATE NOT NULL,
     concluida_em DATETIME(6) NOT NULL,
@@ -180,7 +211,11 @@ CREATE TABLE IF NOT EXISTS resolucao (
     tema_id BIGINT UNSIGNED NOT NULL,
     elegivel_leaderboard TINYINT(1) NOT NULL DEFAULT 0,
     criado_em DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_resolucao_tentativa UNIQUE (tentativa_id),
     CONSTRAINT ck_resolucao_elegivel CHECK (elegivel_leaderboard IN (0, 1)),
+    CONSTRAINT fk_resolucao_tentativa
+        FOREIGN KEY (tentativa_id) REFERENCES tentativa_desafio (id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT fk_resolucao_jogador
         FOREIGN KEY (jogador_id) REFERENCES jogador (id)
         ON UPDATE CASCADE ON DELETE RESTRICT,
@@ -214,7 +249,7 @@ CREATE TABLE IF NOT EXISTS leaderboard (
     CONSTRAINT fk_leaderboard_resolucao
         FOREIGN KEY (resolucao_id) REFERENCES resolucao (id)
         ON UPDATE CASCADE ON DELETE RESTRICT,
-    INDEX idx_leaderboard_ordem (dia, tempo_milisegundos, momento_conclusao)
+    INDEX idx_leaderboard_ordem (dia, tempo_milisegundos, momento_conclusao, id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS acesso_diario (

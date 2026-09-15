@@ -1,5 +1,5 @@
 USE zebraPuzzle;
-
+SET SQL_SAFE_UPDATES = 0;
 -- Catálogo oficial das Fases 5 e 6.
 -- Categorias, informações e casas usam a mesma convenção lógica 0..4.
 -- O procedimento temporário garante transação, validação integral e idempotência.

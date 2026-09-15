@@ -71,7 +71,8 @@ function encerrar_sessao_usuario(): void
         $_SESSION['_formularios'],
         $_SESSION['_verificacao_email_desenvolvimento'],
         $_SESSION['_desafios_em_andamento'],
-        $_SESSION['_resultado_desafio']
+        $_SESSION['_resultado_desafio'],
+        $_SESSION['_fase7_reenvios']
     );
     session_regenerate_id(true);
 }
@@ -98,6 +99,25 @@ function tentativa_desafio_obter(int $jogadorId, int $desafioId): ?array
         'tema_id' => (int) $tentativa['tema_id'],
         'inicio_unix' => $tentativa['inicio_unix'],
     ];
+}
+
+/** Reconhece apenas conclusões próprias já autorizadas, sem reutilizar o token para novas mutações. */
+function registrar_token_reenvio_conclusao(int $tentativaId, string $token): void
+{
+    if ($tentativaId < 1 || preg_match('/^[a-f0-9]{64}$/', $token) !== 1) {
+        throw new InvalidArgumentException('Token de conclusão inválido.');
+    }
+    $itens = $_SESSION['_fase7_reenvios'] ?? [];
+    $itens[(string) $tentativaId] = hash('sha256', $token);
+    $_SESSION['_fase7_reenvios'] = array_slice($itens, -20, null, true);
+}
+
+function reenvio_conclusao_valido(int $tentativaId, ?string $token): bool
+{
+    $hash = $_SESSION['_fase7_reenvios'][(string) $tentativaId] ?? null;
+    return is_string($hash) && is_string($token)
+        && preg_match('/^[a-f0-9]{64}$/', $token) === 1
+        && hash_equals($hash, hash('sha256', $token));
 }
 
 /** @return array{jogador_id:int, desafio_id:int, dia:string, tema_id:int, inicio_unix:float} */

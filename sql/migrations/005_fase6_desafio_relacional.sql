@@ -131,15 +131,24 @@ BEGIN
     END IF;
 
     -- A faixa temporária evita colisões nos índices UNIQUE durante a subtração.
-    -- IDs e ordem relativa permanecem exatamente os mesmos.
+    -- IDs e ordem relativa permanecem exatamente os mesmos. A chave primária
+    -- aparece no WHERE para que o script também funcione com SQL_SAFE_UPDATES.
     IF categorias_cinco > 0 THEN
-        UPDATE tema_categoria SET posicao = posicao + 10 WHERE posicao BETWEEN 1 AND 5;
-        UPDATE tema_categoria SET posicao = posicao - 11 WHERE posicao BETWEEN 11 AND 15;
+        UPDATE tema_categoria
+        SET posicao = posicao + 10
+        WHERE id > 0 AND posicao BETWEEN 1 AND 5;
+        UPDATE tema_categoria
+        SET posicao = posicao - 11
+        WHERE id > 0 AND posicao BETWEEN 11 AND 15;
     END IF;
 
     IF valores_cinco > 0 THEN
-        UPDATE tema_valor SET posicao = posicao + 10 WHERE posicao BETWEEN 1 AND 5;
-        UPDATE tema_valor SET posicao = posicao - 11 WHERE posicao BETWEEN 11 AND 15;
+        UPDATE tema_valor
+        SET posicao = posicao + 10
+        WHERE id > 0 AND posicao BETWEEN 1 AND 5;
+        UPDATE tema_valor
+        SET posicao = posicao - 11
+        WHERE id > 0 AND posicao BETWEEN 11 AND 15;
     END IF;
 
     IF EXISTS (SELECT 1 FROM tema_categoria WHERE posicao NOT BETWEEN 0 AND 4)

@@ -16,7 +16,10 @@
         }
     },
     "scripts": {
-        "test": "php tests/run.php",
+        "test": "@php tests/run.php",
+        "lint": "@php tests/run.php --lint",
+        "test:fase7": "@php tests/fase7.php",
+        "test:integration:fase7": "@php tests/integration_fase7.php",
         "test:fase6": "php tests/fase6.php",
         "test:integration": "php tests/integration_fase4.php",
         "test:integration:fase5": "php tests/integration_fase5.php",

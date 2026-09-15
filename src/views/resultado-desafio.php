@@ -14,8 +14,14 @@
                     <dt class="col-sm-5">Tema usado</dt>
                     <dd class="col-sm-7"><?= e($resultado['tema_nome'] ?? ('#' . $resultado['tema_id'])) ?></dd>
                     <dt class="col-sm-5">Elegibilidade</dt>
-                    <dd class="col-sm-7">Pendente da Fase 7 (valor provisório: não elegível)</dd>
+                    <dd class="col-sm-7"><?= (int) $resultado['elegivel_leaderboard'] === 1 ? 'Entrou no leaderboard' : 'Somente histórico' ?></dd>
                 </dl>
+                <p><?= e(mensagem_elegibilidade((string) $resultado['motivo_elegibilidade'])) ?></p>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <a class="btn btn-primary" href="<?= e(url('/desafio?dia=' . rawurlencode((string) $resultado['desafio_dia']))) ?>">Jogar novamente</a>
+                    <a class="btn btn-outline-primary" href="<?= e(url('/leaderboard?dia=' . rawurlencode((string) $resultado['desafio_dia']))) ?>">Ver leaderboard</a>
+                    <a class="btn btn-outline-primary" href="<?= e(url('/historico')) ?>">Desafios anteriores</a>
+                </div>
                 <a class="btn btn-primary" href="<?= e(url('/area-jogador')) ?>">Voltar à área do jogador</a>
             </div>
         </div>
