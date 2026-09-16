@@ -25,7 +25,9 @@
         "test:integration:fase5": "php tests/integration_fase5.php",
         "test:integration:fase6": "php tests/integration_fase6.php",
         "desafio:validar": "php bin/validar-desafio-exemplo.php",
-        "desafio:provisionar": "php bin/provisionar-desafio.php"
+        "desafio:provisionar": "php bin/provisionar-desafio.php",
+        "test:fase8": "@php tests/fase8.php",
+        "test:integration:fase8": "@php tests/integration_fase8.php"
     },
     "config": {
         "sort-packages": true

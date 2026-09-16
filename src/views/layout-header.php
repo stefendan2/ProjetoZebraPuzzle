@@ -11,6 +11,18 @@
 <nav class="navbar navbar-expand-lg bg-dark navbar-dark">
     <div class="container gap-3">
         <a class="navbar-brand" href="<?= e(url('/')) ?>">Zebra Puzzle</a>
+        <?php if (isset($indicadoresOfensiva) && usuario_logado('jogador')): ?>
+            <div class="ofensiva-header text-light" aria-label="Sua sequência de desafios">
+                <?php if ($indicadoresOfensiva['status'] === 'ok'): ?>
+                    <span>Ofensiva atual: <strong><?= e($indicadoresOfensiva['atual']) ?></strong>
+                        <?= $indicadoresOfensiva['atual'] === 1 ? 'dia' : 'dias' ?></span>
+                    <span>Maior ofensiva: <strong><?= e($indicadoresOfensiva['maior']) ?></strong>
+                        <?= $indicadoresOfensiva['maior'] === 1 ? 'dia' : 'dias' ?></span>
+                <?php else: ?>
+                    <span>Indicadores temporariamente indisponíveis.</span>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
         <div class="d-flex flex-wrap align-items-center justify-content-end gap-2 ms-auto">
             <?php if (usuario_logado('jogador')): ?>
                 <a class="btn btn-sm btn-outline-light" href="<?= e(url('/area-jogador')) ?>">Área do jogador</a>

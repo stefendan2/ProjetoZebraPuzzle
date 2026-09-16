@@ -280,6 +280,14 @@ function concluir_tentativa_e_registrar_resolucao(
         if ($resolucao === null) {
             throw new RuntimeException('A resolução concluída não pôde ser recarregada.');
         }
+        $ofensiva = carregar_ofensiva_jogador($pdo, $jogadorId, $concluidaEm);
+        if ($ofensiva === null) {
+            throw new RuntimeException('Não foi possível calcular a ofensiva do jogador.');
+        }
+        persistir_ofensiva_na_transacao($pdo, $jogadorId, $ofensiva);
+        if ($observadorPersistencia !== null) {
+            $observadorPersistencia('ofensiva');
+        }
         $pdo->commit();
         $resolucao['reenvio'] = false;
         return $resolucao;

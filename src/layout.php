@@ -27,6 +27,8 @@ function renderizar(string $view, array $dados = []): void
         throw new RuntimeException('View não encontrada.');
     }
 
+    $indicadoresOfensiva = function_exists('ofensiva_contexto_cabecalho')
+        ? ofensiva_contexto_cabecalho() : null;
     extract($dados, EXTR_SKIP);
     $titulo = isset($titulo) && is_string($titulo) ? $titulo : (string) app_config('name');
     $mensagensFlash = flash_consumir();
@@ -35,4 +37,3 @@ function renderizar(string $view, array $dados = []): void
     require $viewPath;
     require __DIR__ . '/views/layout-footer.php';
 }
-

@@ -40,6 +40,7 @@ require_once __DIR__ . '/provedor_desafio_exemplo.php';
 require_once __DIR__ . '/desafios.php';
 require_once __DIR__ . '/elegibilidade.php';
 require_once __DIR__ . '/tentativas.php';
+require_once __DIR__ . '/ofensiva.php';
 require_once __DIR__ . '/resolucoes.php';
 require_once __DIR__ . '/leaderboard.php';
 require_once __DIR__ . '/sessao.php';

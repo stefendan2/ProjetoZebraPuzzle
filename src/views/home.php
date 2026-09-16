@@ -33,7 +33,8 @@
                 <h2 class="h4">Desafio diário</h2>
                 <p class="mb-0">
                     O puzzle 5 × 5, suas dicas estruturadas, o cronômetro do servidor e o
-                    registro da resolução estão disponíveis. Ranking e ofensiva chegam depois.
+                    registro da resolução estão disponíveis. Consulte o ranking diário e acompanhe
+                    sua ofensiva atual e seu recorde no cabeçalho após concluir a entrada do dia.
                 </p>
             </div>
         </article>

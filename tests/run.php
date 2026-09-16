@@ -49,12 +49,14 @@ require dirname(__DIR__) . '/src/provedor_desafio_exemplo.php';
 require dirname(__DIR__) . '/src/desafios.php';
 require dirname(__DIR__) . '/src/elegibilidade.php';
 require dirname(__DIR__) . '/src/tentativas.php';
+require dirname(__DIR__) . '/src/ofensiva.php';
 require dirname(__DIR__) . '/src/leaderboard.php';
 require dirname(__DIR__) . '/src/resolucoes.php';
 require dirname(__DIR__) . '/src/contas.php';
 require dirname(__DIR__) . '/src/captcha.php';
 require __DIR__ . '/fase6.php';
 require __DIR__ . '/fase7.php';
+require __DIR__ . '/fase8.php';
 
 session_id('fase6-' . bin2hex(random_bytes(8)));
 session_start();
@@ -274,6 +276,7 @@ $verificar(is_string($seedTemas) && !str_contains($seedTemas, 'TRUNCATE'), 'O se
 
 executar_testes_unitarios_fase6($verificar);
 executar_testes_unitarios_fase7($verificar);
+executar_testes_unitarios_fase8($verificar);
 
 if ($falhas !== []) {
     session_destroy();
